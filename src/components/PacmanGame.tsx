@@ -115,6 +115,16 @@ const PacmanGame: React.FC = () => {
     return tile === 1;
   }, []);
 
+  // Helper: Calculate distance between two positions for AI navigation
+  const calculateDistance = useCallback((from: Point, to: Point, direction: Direction): number => {
+    let nx = from.x, ny = from.y;
+    if (direction === 'UP') ny -= TILE_SIZE;
+    if (direction === 'DOWN') ny += TILE_SIZE;
+    if (direction === 'LEFT') nx -= TILE_SIZE;
+    if (direction === 'RIGHT') nx += TILE_SIZE;
+    return Math.pow(nx - to.x, 2) + Math.pow(ny - to.y, 2);
+  }, []);
+
   const canMove = useCallback((pos: Point, dir: Direction, currentMap: number[][]) => {
     if (!dir) return false;
     
@@ -365,48 +375,18 @@ const PacmanGame: React.FC = () => {
                 );
 
                 if (validDirs.length > 0) {
-                    // Simple AI: Chasing or Random
+                    // Ghost AI: Choose direction based on status
                     if (g.status === 'NORMAL') {
-                        // Move towards pacman
-                        validDirs.sort((a, b) => {
-                            const dist = (dir: Direction) => {
-                                let nx = g.pos.x, ny = g.pos.y;
-                                if (dir === 'UP') ny -= TILE_SIZE;
-                                if (dir === 'DOWN') ny += TILE_SIZE;
-                                if (dir === 'LEFT') nx -= TILE_SIZE;
-                                if (dir === 'RIGHT') nx += TILE_SIZE;
-                                return Math.pow(nx - p.pos.x, 2) + Math.pow(ny - p.pos.y, 2);
-                            };
-                            return dist(a) - dist(b);
-                        });
+                        // Move towards Pacman
+                        validDirs.sort((a, b) => calculateDistance(g.pos, p.pos, a) - calculateDistance(g.pos, p.pos, b));
                         g.dir = validDirs[0];
                     } else if (g.status === 'SCARED') {
-                        // Move away from pacman
-                         validDirs.sort((a, b) => {
-                            const dist = (dir: Direction) => {
-                                let nx = g.pos.x, ny = g.pos.y;
-                                if (dir === 'UP') ny -= TILE_SIZE;
-                                if (dir === 'DOWN') ny += TILE_SIZE;
-                                if (dir === 'LEFT') nx -= TILE_SIZE;
-                                if (dir === 'RIGHT') nx += TILE_SIZE;
-                                return Math.pow(nx - p.pos.x, 2) + Math.pow(ny - p.pos.y, 2);
-                            };
-                            return dist(b) - dist(a);
-                        });
+                        // Move away from Pacman
+                        validDirs.sort((a, b) => calculateDistance(g.pos, p.pos, b) - calculateDistance(g.pos, p.pos, a));
                         g.dir = validDirs[0];
                     } else {
-                        // Eyes: Return to spawn
-                         validDirs.sort((a, b) => {
-                            const dist = (dir: Direction) => {
-                                let nx = g.pos.x, ny = g.pos.y;
-                                if (dir === 'UP') ny -= TILE_SIZE;
-                                if (dir === 'DOWN') ny += TILE_SIZE;
-                                if (dir === 'LEFT') nx -= TILE_SIZE;
-                                if (dir === 'RIGHT') nx += TILE_SIZE;
-                                return Math.pow(nx - g.spawnPos.x, 2) + Math.pow(ny - g.spawnPos.y, 2);
-                            };
-                            return dist(a) - dist(b);
-                        });
+                        // Eyes mode: Return to spawn position
+                        validDirs.sort((a, b) => calculateDistance(g.pos, g.spawnPos, a) - calculateDistance(g.pos, g.spawnPos, b));
                         g.dir = validDirs[0];
                     }
                 } else {
@@ -518,7 +498,8 @@ const PacmanGame: React.FC = () => {
             <div className="text-xl font-mono text-yellow-400 leading-none glow-text">{score.toLocaleString()}</div>
           </div>
           <div className="w-10 h-10 bg-slate-800 rounded-full border border-slate-700 flex items-center justify-center overflow-hidden">
-             <img src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${"PacUser"}`} alt="avatar" />
+             {/* TODO: Connect to real user avatar API */}
+             <div className="w-full h-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center text-white font-bold">P</div>
           </div>
         </div>
       </nav>
@@ -572,22 +553,7 @@ const PacmanGame: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 backdrop-blur-sm">
-            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-              道具清單
-            </h3>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-slate-800/50 p-3 rounded-lg border border-slate-700 flex flex-col items-center hover:bg-slate-800 transition-colors cursor-help">
-                <div className="text-xl mb-1">🍒</div>
-                <span className="text-[10px] uppercase font-bold text-slate-300">櫻桃 x0</span>
-              </div>
-              <div className="bg-slate-800/50 p-3 rounded-lg border border-slate-700 flex flex-col items-center hover:bg-slate-800 transition-colors cursor-help">
-                <div className="text-xl mb-1">🍓</div>
-                <span className="text-[10px] uppercase font-bold text-slate-300">草莓 x0</span>
-              </div>
-            </div>
-          </div>
+          {/* TODO: Implement power-up system - Currently disabled */}
         </aside>
 
         {/* Center: Game Canvas */}
@@ -705,6 +671,7 @@ const PacmanGame: React.FC = () => {
               全球排名 (24H)
             </h3>
             <div className="space-y-3 flex-1 overflow-y-auto pr-1 custom-scrollbar">
+              {/* TODO: Connect to real leaderboard API - Currently using demo data */}
               {[
                 { rank: '01', name: 'Alex Pro', score: '2,450,000', online: true },
                 { rank: '02', name: 'CyberMage', score: '1,980,400', online: false },
